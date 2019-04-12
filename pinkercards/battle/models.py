@@ -9,6 +9,9 @@ class Questions(models.Model):
     answer = models.CharField(max_length=20)
     question_type = models.CharField(max_length=20, unique=False)
 
+    def __str__(self):
+        return 'text: {}, answer: {}, type: {}.'.format(self.question_text, self.answer, self.question_type)
+
     class Meta:
         verbose_name = "Question"
         verbose_name_plural = "Questions"
