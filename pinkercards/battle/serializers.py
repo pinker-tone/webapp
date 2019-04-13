@@ -23,4 +23,13 @@ class GameSerializer(serializers.ModelSerializer):
     questions = QuestionsSerializer(many=True)
     class Meta:
         model = Game
-        fields = ("user_1", "user_2", "questions", "status", "date")
+        fields = ("id", "user_1", "user_2", "questions", "status", "date")
+
+class GamePostSerializer(serializers.ModelSerializer):
+    """Сериализация таблицы игр"""
+    user_1 = UserSerializer()
+    user_2 = UserSerializer()
+    questions = QuestionsSerializer(many=True)
+    class Meta:
+        model = Game
+        fields = ("user_1", "user_2")
