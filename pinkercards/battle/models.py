@@ -23,6 +23,7 @@ class Game(models.Model):
     user_2 = models.ForeignKey(User, verbose_name="User 2", related_name="user_2", on_delete=models.DO_NOTHING, unique=False)
     questions = models.ManyToManyField(Questions, verbose_name="Questions", related_name="question")
     status = models.CharField(max_length=20, unique=False, default='WAITING')
+    # hash = models.CharField(max_length)
     date = models.DateTimeField("Create date", auto_now_add=True)
 
     class Meta:
@@ -32,7 +33,7 @@ class Game(models.Model):
 class GameHistory(models.Model):
     '''Модель таблицы истории игр'''
 
-    game = models.ForeignKey(Game,  verbose_name="Game", related_name="game", on_delete=models.PROTECT)
+    game = models.ForeignKey(Game,  verbose_name="Game", related_name="game", on_delete=models.CASCADE)
     winner = models.ForeignKey(User,  verbose_name="Winner", related_name="winner", on_delete=models.PROTECT)
     answers_correct_user_1 = models.SmallIntegerField(unique=False)
     answers_correct_user_2 = models.SmallIntegerField(unique=False)
