@@ -3,5 +3,5 @@ from django.urls import include
 from .views import *
 
 urlpatterns = [
-    path('games/<str:username>/', GameView.as_view()),
+    path('games/', GameView.as_view()),
 ]
