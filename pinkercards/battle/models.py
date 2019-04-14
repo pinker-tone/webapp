@@ -33,9 +33,9 @@ class Game(models.Model):
 class GameHistory(models.Model):
     '''Модель таблицы истории игр'''
 
-    game = models.ForeignKey(Game,  verbose_name="Game", related_name="game", on_delete=models.CASCADE)
+    game = models.OneToOneField(Game,  verbose_name="Game", related_name="game", on_delete=models.CASCADE)
     winner = models.ForeignKey(User,  verbose_name="Winner", related_name="winner", on_delete=models.PROTECT, blank=True, null=True)
-    answers_correct_user_1 = models.SmallIntegerField(unique=False)
+    answers_correct_user_1 = models.SmallIntegerField(unique=False, blank=True, null=True)
     answers_correct_user_2 = models.SmallIntegerField(unique=False, blank=True, null=True)
     class Meta:
         verbose_name = "Game History"
