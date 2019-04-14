@@ -29,10 +29,19 @@ class GameView(APIView):
 		return questions
 
 	
-	def get(self, request):
-		games = Game.objects.filter(user_1__username=request.user.username) | Game.objects.filter(user_2__username=request.user.username)
-		serializer = GameSerializer(games, many=True)
-		return Response({"data": serializer.data})
+	def get(self, request, game_id=None):
+		if game_id:
+			if not game_id-1 in range(len(Game.objects.all())):
+				return Response({"status": 400, "data": "Error. Game with this id doesn't exist."}, status=400)
+			games = Game.objects.get(id=game_id)
+			serializer = GameSerializer(games)
+		else:
+			games = Game.objects.filter(user_1__username=request.user.username) | Game.objects.filter(user_2__username=request.user.username)
+			if len(games) != 1:
+				serializer = GameSerializer(games, many=True)
+			else:
+				serializer = GameSerializer(games[0])
+		return Response({"status": 200, "data": serializer.data})
 	
 	def post(self, request):
 		# username = request.data.get("username")
@@ -41,16 +50,16 @@ class GameView(APIView):
 		if request.data.get("opponent"):
 			opponent = request.data.get("opponent")
 		else:
-			return Response({"status": "Error. opponent field doesnt't exist."})
+			return Response({"status": 400, "data": "Error. opponent field doesnt't exist."}, status=400)
 
 		if game.is_valid():
 			user_1 = request.user
 			user_2 = User.objects.filter(username=opponent)
 			if user_2.exists():
 				if user_1 == user_2[0]:
-					return Response({"status": "You are trying to challenge yourself."})
+					return Response({"status": 400, "data": "You are trying to challenge yourself."}, status=400)
 			else:
-				return Response({"status": "Error. Opponent \""+opponent+"\" doesn't exist."})
+				return Response({"status": 400, "data": "Error. Opponent \""+opponent+"\" doesn't exist."}, status=400)
 
 			# creating game object
 
@@ -63,21 +72,32 @@ class GameView(APIView):
 			game.status = "WAITING"
 			serializer = GameSerializer(game)
 
-			
+			# creating GameHistory object
+			game_history = GameHistory()
+			game_history.game = game
+			game_history.save()
 
-			return Response({"status": "Successfully started.", "data": serializer.data})
+			return Response({"status": 200, "data": serializer.data})
 		else:
-			return Response({"status": "Error. Invalid data."})
+			return Response({"status": 400, "data": "Error. Invalid data."}, status=400)
 
 class GameHistoryView(APIView):
 	"""История игр"""
 
 	permission_classes = [permissions.IsAuthenticated, ]
 
-	def get(self, request):
-		games = GameHistory.objects.filter(game__user_1__username=request.user.username) | GameHistory.objects.filter(game__user_2__username=request.user.username) 
-		serializer = GameHistorySerializer(games, many=True)
-		return Response({"data": serializer.data})
+	def get(self, request, game_id=None):
+		if game_id:
+			if not game_id-1 in range(len(GameHistory.objects.all())):
+				return Response({"status": 400, "data": "Error. GameHistory with this id doesn't exist."}, status=400)
+			games = GameHistory.objects.get(id=game_id)
+			if games.game.user_1.username != request.user.username and games.game.user_2.username != request.user.username:
+				return Response({"status": 400, "data": "Error. It's not your game."}, status=400)
+			serializer = GameHistorySerializer(games)
+		else:
+			games = GameHistory.objects.filter(game__user_1__username=request.user.username) | GameHistory.objects.filter(game__user_2__username=request.user.username)
+			serializer = GameHistorySerializer(games, many=True)
+		return Response({"status": 200, "data": serializer.data})
 
 
 class GameWaitingView(APIView):
@@ -87,42 +107,45 @@ class GameWaitingView(APIView):
 
 	def post(self, request):
 		
+		# checking if game exitsts
+		try:
+			game_id = int(request.data.get("game_id"))
+		except TypeError:
+			return Response({"status": 400, "data": "Error. game_id field doesn't exist."}, status=400)
+		if not game_id-1 in range(len(Game.objects.all())):
+			return Response({"status": 400, "data": "Error. There's no game with this id."}, status=400)
+
+
+
+		# checking if it's your game
+		if Game.objects.filter(id=game_id, user_1__username=request.user.username).exists():
+			pass
+		else:
+			return Response({"status": 400, "data": "Error. It's not your game."}, status=400)
+
 		# checking if answers_correct_user_1 exists and valid
 		try:
 			if int(request.data.get("correct_answers")) in range(1, 6):
 				pass
 			else:
-				return Response({"status": "Error. correct_answers field is invalid."})
+				return Response({"status": 400, "data": "Error. correct_answers field is invalid."}, status=400)
 		except TypeError:
-			return Response({"status": "Error. correct_answers field doesn't exist."})
-		
-		# checking if game exitsts
-		try:
-			game_id = int(request.data.get("game_id"))
-		except TypeError:
-			return Response({"status": "Error. game_id field doesn't exist."})
-		if not game_id-1 in range(len(Game.objects.all())):
-			return Response({"status": "Error. There's no game with this id."})
+			return Response({"status": 400, "data": "Error. correct_answers field doesn't exist."}, status=400)
 
+		# checking if you've already answered
 		if Game.objects.filter(id=game_id).exists():
-			if GameHistory.objects.filter(game__id=game_id).exists():
-				return Response({"status": "Error. You've already given answer."})
+			if GameHistory.objects.get(game__id=game_id).answers_correct_user_1:
+				return Response({"status": 400, "data": "Error. You've already given answer."}, status=400)
 		else:
-			return Response({"status": "Error. This game doesn't exist."})
+			return Response({"status": 400, "data": "Error. This game doesn't exist."}, status=400)
 		
-		# checking if it's your game
-		if Game.objects.filter(id=game_id, user_1__username=request.user.username).exists():
-			pass
-		else:
-			return Response({"status": "Error. It's not your game."})
 
-		# creating GameHistory object
-		game_history = GameHistory()
-		game_history.game = Game.objects.get(id=game_id)
+		# getting GameHistory object
+		game_history = GameHistory.objects.get(game__id=game_id)
 		game_history.answers_correct_user_1 = int(request.data.get("correct_answers"))
 		game_history.save()
 
-		return Response({"status": "Game successfully added."})
+		return Response({"status": 200, "data": "Your answers were successfully added."})
 
 class GameEndView(APIView):
 	"""Окончание игры"""
@@ -133,31 +156,33 @@ class GameEndView(APIView):
 		try:
 			game_id = int(request.data.get("game_id"))
 		except TypeError:
-			return Response({"status": "Error. game field doesn't exist."})
+			return Response({"status": 400, "data": "Error. game field doesn't exist."}, status=400)
 		if not game_id-1 in range(len(Game.objects.all())):
-			return Response({"status": "Error. There's no game with this id."})
+			return Response({"status": 400, "data": "Error. There's no game with this id."}, status=400)
 
 		# checking if game with given id exists
 		if GameHistory.objects.filter(game__id=game_id).exists():
 			game = Game.objects.get(id=game_id)
 			if game.status == "WAITING":
-				if game.user_2.username == request.user.username:
-					pass
+				if game.user_2.username != request.user.username:
+					if game.user_1.username == request.user.username:
+						return Response({"status": 400, "data": "Error. Unexpected user."}, status=400)
+					return Response({"status": 400, "data": "Error. It's not your game."}, status=400)
 				else:
-					return Response({"status": "Error. It's not your game."})	
+					pass
 			else:
-				return Response({"status": "Error. This game is ended."})
+				return Response({"status": 400, "data": "Error. This game is ended."}, status=400)
 		else:
-			return Response({"status": "Error. This game doesn't exist or isn't in history."})
+			return Response({"status": 400, "data": "Error. This game doesn't exist or first user haven't answered."}, status=400)
 		
 		# checking if answers_correct field is valid
 		try:
 			if int(request.data.get("correct_answers")) in range(1, 6):
 				pass
 			else:
-				return Response({"status": "Error. correct_answers field is invalid or doesn't exist."})
+				return Response({"status": 400, "data": "Error. correct_answers field is invalid or doesn't exist."}, status=400)
 		except TypeError:
-			return Response({"status": "Error. correct_answers field doesn't exist."})
+			return Response({"status": 400, "data": "Error. correct_answers field doesn't exist."}, status=400)
 		
 
 		game_history = GameHistory.objects.get(game__id=game_id)
@@ -171,7 +196,7 @@ class GameEndView(APIView):
 		game_history.save()
 		game.status = "ENDED"
 		game.save()
-		return Response({"status": "Game successfully ended."})
+		return Response({"status": 200, "data": "Game successfully ended."})
 
 
 class UsersView(APIView):

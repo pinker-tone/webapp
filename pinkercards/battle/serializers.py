@@ -45,4 +45,4 @@ class GameHistorySerializer(serializers.ModelSerializer):
     winner = UserSerializer()
     class Meta:
         model = GameHistory
-        fields = ("game", "winner", "answers_correct_user_1", "answers_correct_user_2")
+        fields = ("id","game", "winner", "answers_correct_user_1", "answers_correct_user_2")
