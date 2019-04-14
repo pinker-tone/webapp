@@ -125,7 +125,7 @@ class GameWaitingView(APIView):
 
 		# checking if answers_correct_user_1 exists and valid
 		try:
-			if int(request.data.get("correct_answers")) in range(1, 6):
+			if int(request.data.get("correct_answers")) in range(6):
 				pass
 			else:
 				return Response({"status": 400, "data": "Error. correct_answers field is invalid."}, status=400)
@@ -177,10 +177,10 @@ class GameEndView(APIView):
 		
 		# checking if answers_correct field is valid
 		try:
-			if int(request.data.get("correct_answers")) in range(1, 6):
+			if int(request.data.get("correct_answers")) in range(6):
 				pass
 			else:
-				return Response({"status": 400, "data": "Error. correct_answers field is invalid or doesn't exist."}, status=400)
+				return Response({"status": 400, "data": "Error. correct_answers field is invalid."}, status=400)
 		except TypeError:
 			return Response({"status": 400, "data": "Error. correct_answers field doesn't exist."}, status=400)
 		
