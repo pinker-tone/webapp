@@ -13,8 +13,16 @@ class GameAdmin(admin.ModelAdmin):
     #     return "\n".join([user.username for user in obj.invited_users.all()])
 
 class QuestionsAdmin(admin.ModelAdmin):
-    """Воросы"""
+    """Вопросы"""
     list_display = ("id", "question_text", "answer", "question_type")
+
+class GameHistoryAdmin(admin.ModelAdmin):
+    """История игр"""
+    list_display = ("id", "game", "winner", "answers_correct_user_1", "answers_correct_user_2")
+
+    def game(self, obj):
+        return str(obj.game.id)
 
 admin.site.register(Game, GameAdmin)
 admin.site.register(Questions, QuestionsAdmin)
+admin.site.register(GameHistory, GameHistoryAdmin)
