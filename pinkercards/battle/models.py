@@ -23,20 +23,13 @@ class Game(models.Model):
     user_2 = models.ForeignKey(User, verbose_name="User 2", related_name="user_2", on_delete=models.DO_NOTHING, unique=False)
     questions = models.ManyToManyField(Questions, verbose_name="Questions", related_name="question")
     status = models.CharField(max_length=20, unique=False, default='WAITING')
+    winner = models.ForeignKey(User,  verbose_name="Winner", related_name="winner", on_delete=models.PROTECT, blank=True, null=True)
+    answers_correct_user_1 = models.SmallIntegerField(unique=False, blank=True, null=True)
+    answers_correct_user_2 = models.SmallIntegerField(unique=False, blank=True, null=True)
+    draw = models.BooleanField(unique=False, blank=True, null=True)
     # hash = models.CharField(max_length)
     date = models.DateTimeField("Create date", auto_now_add=True)
 
     class Meta:
         verbose_name = "Game"
         verbose_name_plural = "Games"
-
-class GameHistory(models.Model):
-    '''Модель таблицы истории игр'''
-
-    game = models.OneToOneField(Game,  verbose_name="Game", related_name="game", on_delete=models.CASCADE)
-    winner = models.ForeignKey(User,  verbose_name="Winner", related_name="winner", on_delete=models.PROTECT, blank=True, null=True)
-    answers_correct_user_1 = models.SmallIntegerField(unique=False, blank=True, null=True)
-    answers_correct_user_2 = models.SmallIntegerField(unique=False, blank=True, null=True)
-    class Meta:
-        verbose_name = "Game History"
-        verbose_name_plural = "Games History"
