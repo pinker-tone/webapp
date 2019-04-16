@@ -23,8 +23,9 @@ class GameSerializer(serializers.ModelSerializer):
     """Сериализация таблицы игр"""
     user_1 = UserSerializer()
     user_2 = UserSerializer()
+    winner = UserSerializer()
     questions = QuestionsSerializer(many=True)
-
+    
     class Meta:
         model = Game
         fields = ("id", "user_1", "user_2", "questions", "status", "winner", "answers_correct_user_1", "answers_correct_user_2", "draw", "date")
