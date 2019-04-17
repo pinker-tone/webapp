@@ -33,17 +33,17 @@ class GameView(APIView):
 	
 	def get(self, request, game_id=None):
 		if game_id:
-			if not game_id-1 in range(len(Game.objects.all())):
+			if  not Game.objects.filter(id=game_id).exists():
 				return Response({"status": 400, "data": GAME_DOESNT_EXIST}, status=400)
-			games = Game.objects.get(id=game_id)
-			serializer = GameSerializer(games)
-		else:
-			games = Game.objects.filter(user_1__username=request.user.username) | Game.objects.filter(user_2__username=request.user.username)
-			if len(games) != 1:
+			games = Game.objects.filter(id=game_id)
+			if games[0].user_1.username == request.user.username or games[0].user_2.username == request.user.username:
 				serializer = GameSerializer(games, many=True)
 			else:
-				serializer = GameSerializer(games[0])
-		return Response({"status": 200, "data": serializer.data})
+				return Response({"status": 400, "data": NOT_YOUR_GAME}, status=400)
+		else:
+			games = Game.objects.filter(user_1__username=request.user.username) | Game.objects.filter(user_2__username=request.user.username)
+			serializer = GameSerializer(games, many=True)
+		return Response(serializer.data)
 
 
 class GameCreateView(APIView):
@@ -92,10 +92,9 @@ class GameCreateView(APIView):
 			game.status = "WAITING"
 			game.save()
 			game.questions.add(*self.random_questions(Questions.objects.all()))
-
-			serializer = GameSerializer(game)
-
-			return Response({"status": 200, "data": serializer.data})
+			game = Game.objects.filter(id=game.id)
+			serializer = GameSerializer(game, many=True)
+			return Response(list(serializer.data))
 		else:
 			return Response({"status": 400, "data": INVALID_DATA}, status=400)
 
@@ -182,4 +181,4 @@ class UsersView(APIView):
 	def get(self, request):
 		users = User.objects.all()
 		serializer = UserSerializer(users, many=True)
-		return Response({"data": serializer.data})
+		return Response(serializer.data)
