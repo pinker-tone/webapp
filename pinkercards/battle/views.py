@@ -188,6 +188,6 @@ class UsersView(APIView):
 		return user_list
 
 	def get(self, request):
-		users = User.objects.all()
+		users = User.objects.exclude(username=request.user.username)
 		serializer = UserSerializer(self.random_users(users), many=True)
 		return Response(serializer.data)
