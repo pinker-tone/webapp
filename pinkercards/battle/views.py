@@ -31,7 +31,7 @@ class GameView(APIView):
 				return game.id
 
 			games = Game.objects.filter(user_1__username=request.user.username) | Game.objects.filter(user_2__username=request.user.username)
-			games = sorted(games, key=get_game_id, reverse=True)
+			games = sorted(games, key=get_game_id)
 			serializer = GameSerializer(games[::-1], many=True)
 		return Response(serializer.data)
 
