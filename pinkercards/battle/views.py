@@ -16,20 +16,6 @@ class GameView(APIView):
 	permission_classes = [permissions.IsAuthenticated, ]
 	# permission_classes = [permissions.AllowAny,]
 
-	def random_questions(self, query):
-		question_num_list = []
-		questions = []
-		for i in range(5):
-			while True:
-				id_num = randint(0, len(query)-1)
-				if id_num in question_num_list:
-					continue
-				else:
-					break
-			question_num_list.append(id_num)
-			questions.append(query[id_num])
-		return questions
-
 	
 	def get(self, request, game_id=None):
 		if game_id:
@@ -42,7 +28,7 @@ class GameView(APIView):
 				return Response({"status": 400, "data": NOT_YOUR_GAME}, status=400)
 		else:
 			games = Game.objects.filter(user_1__username=request.user.username) | Game.objects.filter(user_2__username=request.user.username)
-			serializer = GameSerializer(games, many=True)
+			serializer = GameSerializer(games[::-1], many=True)
 		return Response(serializer.data)
 
 
@@ -178,7 +164,30 @@ class GameAnswerView(APIView):
 class UsersView(APIView):
 	"""Пользователи"""
 	permission_classes = [permissions.IsAuthenticated, ]
+
+	def random_users(self, users):
+		user_list = []
+		alredy_used = []
+		if len(users) >= 10:
+			while len(user_list) < 10:
+				index = randint(0, len(user)-1)
+				if index in alredy_used:
+					continue
+				alredy_used.append(index)
+				user_list.append(users[index])
+		else:
+			for i in range(len(users)):
+				while True:
+					index = randint(0, len(users)-1)
+					if index in alredy_used:
+						continue
+					else:
+						break
+				alredy_used.append(index)
+				user_list.append(users[index])
+		return user_list
+
 	def get(self, request):
 		users = User.objects.all()
-		serializer = UserSerializer(users, many=True)
+		serializer = UserSerializer(self.random_users(users), many=True)
 		return Response(serializer.data)
