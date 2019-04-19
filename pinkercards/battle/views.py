@@ -27,7 +27,11 @@ class GameView(APIView):
 			else:
 				return Response({"status": 400, "data": NOT_YOUR_GAME}, status=400)
 		else:
+			def get_game_id(game):
+				return game.id
+
 			games = Game.objects.filter(user_1__username=request.user.username) | Game.objects.filter(user_2__username=request.user.username)
+			games = sorted(games, key=get_game_id, reverse=True)
 			serializer = GameSerializer(games[::-1], many=True)
 		return Response(serializer.data)
 
